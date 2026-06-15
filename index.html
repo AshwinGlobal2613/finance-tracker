@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinTrack — Personal Finance Tracker</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --surface: #1a212b;
+    --surface-2: #232c38;
+    --border: #2e3a48;
+    --text: #e6edf3;
+    --text-dim: #8b98a9;
+    --accent: #4f9cf9;
+    --accent-soft: rgba(79,156,249,.15);
+    --green: #3fb950;
+    --red: #f85149;
+    --amber: #d29922;
+    --radius: 12px;
+    --shadow: 0 4px 20px rgba(0,0,0,.3);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app { max-width: 1180px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), #7c5cff);
+    display: grid; place-items: center; font-weight: 700; font-size: 20px; color: #fff;
+  }
+  .brand h1 { font-size: 20px; font-weight: 600; letter-spacing: -.3px; }
+  .brand p { font-size: 12px; color: var(--text-dim); }
+  .header-actions { display: flex; gap: 8px; }
+
+  button, .btn {
+    font: inherit; cursor: pointer; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--text);
+    padding: 9px 14px; border-radius: 9px; transition: .15s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  button:hover, .btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 500; }
+  button.primary:hover { background: #3b8aee; }
+  button.ghost { background: transparent; }
+  button.danger:hover { border-color: var(--red); background: rgba(248,81,73,.12); color: var(--red); }
+
+  /* Summary cards */
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px; position: relative; overflow: hidden;
+  }
+  .card .label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .5px; }
+  .card .value { font-size: 26px; font-weight: 700; margin-top: 6px; letter-spacing: -.5px; }
+  .card .sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+  .card .strip { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+  .strip.green { background: var(--green); } .strip.red { background: var(--red); }
+  .strip.blue { background: var(--accent); } .strip.amber { background: var(--amber); }
+  .pos { color: var(--green); } .neg { color: var(--red); }
+
+  /* Layout grid */
+  .grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; }
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+  }
+  .panel h2 { font-size: 15px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+  .panel h2 .hint { font-size: 12px; color: var(--text-dim); font-weight: 400; }
+
+  /* Form */
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  label.field { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--text-dim); }
+  input, select {
+    font: inherit; background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--text); padding: 9px 11px; border-radius: 8px; width: 100%;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
+  .seg { display: flex; gap: 6px; }
+  .seg button { flex: 1; justify-content: center; }
+  .seg button.active[data-t="expense"] { background: rgba(248,81,73,.15); border-color: var(--red); color: var(--red); }
+  .seg button.active[data-t="income"] { background: rgba(63,185,80,.15); border-color: var(--green); color: var(--green); }
+
+  /* Transactions list */
+  .filters { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+  .filters input, .filters select { width: auto; flex: 1; min-width: 120px; }
+  .tx-list { display: flex; flex-direction: column; gap: 2px; max-height: 460px; overflow-y: auto; }
+  .tx {
+    display: grid; grid-template-columns: 36px 1fr auto auto; align-items: center;
+    gap: 12px; padding: 10px 8px; border-radius: 8px; transition: .12s;
+  }
+  .tx:hover { background: var(--surface-2); }
+  .tx .ico { width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; font-size: 17px; background: var(--surface-2); }
+  .tx .meta .desc { font-weight: 500; font-size: 14px; }
+  .tx .meta .det { font-size: 12px; color: var(--text-dim); }
+  .tx .amt { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tx .del { opacity: 0; border: none; background: none; padding: 4px 6px; color: var(--text-dim); }
+  .tx:hover .del { opacity: 1; }
+  .tx .del:hover { color: var(--red); }
+  .empty { text-align: center; padding: 40px 20px; color: var(--text-dim); font-size: 14px; }
+
+  /* Budgets */
+  .budget { margin-bottom: 16px; }
+  .budget .bhead { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+  .budget .bhead .cat { font-weight: 500; }
+  .bar { height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+  .bar > span { display: block; height: 100%; border-radius: 99px; transition: width .4s ease; }
+
+  /* Chart */
+  .chart-wrap { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+  .legend { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 160px; }
+  .legend .li { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .legend .dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+  .legend .lcat { flex: 1; }
+  .legend .lamt { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--surface); padding: 4px; border-radius: 10px; border: 1px solid var(--border); width: fit-content; }
+  .tabs button { background: transparent; border: none; padding: 8px 16px; border-radius: 7px; color: var(--text-dim); }
+  .tabs button.active { background: var(--accent-soft); color: var(--accent); }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--surface-2); border: 1px solid var(--border); padding: 12px 20px;
+    border-radius: 10px; box-shadow: var(--shadow); transition: .3s; opacity: 0; z-index: 50;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .mono { font-variant-numeric: tabular-nums; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .cards { grid-template-columns: repeat(2,1fr); } }
+  @media (max-width: 520px) { .cards { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="logo">₣</div>
+      <div>
+        <h1>FinTrack</h1>
+        <p>Personal finance, all in one place</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <input type="month" id="monthPicker" style="width:auto;">
+      <button class="ghost" id="exportBtn" title="Download all data as JSON">⤓ Export</button>
+      <button class="ghost" id="importBtn" title="Import a JSON backup">⤒ Import</button>
+      <input type="file" id="importFile" accept="application/json" hidden>
+    </div>
+  </header>
+
+  <section class="cards">
+    <div class="card"><div class="strip green"></div><div class="label">Income</div><div class="value pos mono" id="cIncome">$0</div><div class="sub" id="cIncomeSub">this month</div></div>
+    <div class="card"><div class="strip red"></div><div class="label">Expenses</div><div class="value neg mono" id="cExpense">$0</div><div class="sub" id="cExpenseSub">this month</div></div>
+    <div class="card"><div class="strip blue"></div><div class="label">Net Balance</div><div class="value mono" id="cNet">$0</div><div class="sub" id="cNetSub">income − expenses</div></div>
+    <div class="card"><div class="strip amber"></div><div class="label">Savings Rate</div><div class="value mono" id="cRate">0%</div><div class="sub">of income saved</div></div>
+  </section>
+
+  <div class="tabs">
+    <button class="active" data-tab="overview">Overview</button>
+    <button data-tab="budgets">Budgets</button>
+  </div>
+
+  <!-- OVERVIEW TAB -->
+  <div id="tab-overview">
+    <div class="grid">
+      <div class="panel">
+        <h2>Transactions <span class="hint" id="txCount">0 entries</span></h2>
+        <div class="filters">
+          <input type="search" id="search" placeholder="Search description…">
+          <select id="filterCat"><option value="">All categories</option></select>
+          <select id="filterType">
+            <option value="">All</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
+        <div class="tx-list" id="txList"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Add Transaction</h2>
+        <div class="seg" style="margin-bottom:12px;">
+          <button data-t="expense" class="active" id="segExpense">− Expense</button>
+          <button data-t="income" id="segIncome">+ Income</button>
+        </div>
+        <div class="form-row">
+          <label class="field">Amount
+            <input type="number" id="fAmount" placeholder="0.00" step="0.01" min="0">
+          </label>
+          <label class="field">Date
+            <input type="date" id="fDate">
+          </label>
+        </div>
+        <label class="field" style="margin-bottom:10px;">Description
+          <input type="text" id="fDesc" placeholder="e.g. Groceries at Whole Foods">
+        </label>
+        <label class="field" style="margin-bottom:14px;">Category
+          <select id="fCat"></select>
+        </label>
+        <button class="primary" id="addBtn" style="width:100%; justify-content:center;">Add Transaction</button>
+
+        <h2 style="margin-top:26px;">Spending by Category <span class="hint">this month</span></h2>
+        <div class="chart-wrap">
+          <svg id="donut" width="150" height="150" viewBox="0 0 42 42"></svg>
+          <div class="legend" id="legend"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUDGETS TAB -->
+  <div id="tab-budgets" hidden>
+    <div class="grid">
+      <div class="panel">
+        <h2>Monthly Budgets <span class="hint" id="budgetMonth"></span></h2>
+        <div id="budgetList"></div>
+      </div>
+      <div class="panel">
+        <h2>Set a Budget</h2>
+        <p style="font-size:13px;color:var(--text-dim);margin-bottom:14px;">Set a monthly spending limit per category. Progress bars turn red as you approach the limit.</p>
+        <label class="field" style="margin-bottom:10px;">Category
+          <select id="bCat"></select>
+        </label>
+        <label class="field" style="margin-bottom:14px;">Monthly limit
+          <input type="number" id="bAmount" placeholder="0.00" step="0.01" min="0">
+        </label>
+        <button class="primary" id="setBudgetBtn" style="width:100%;justify-content:center;">Save Budget</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---- Categories with icons & colors ----
+  const EXPENSE_CATS = [
+    ["Groceries", "🛒", "#4f9cf9"],
+    ["Dining", "🍽️", "#f85149"],
+    ["Transport", "🚗", "#d29922"],
+    ["Housing", "🏠", "#7c5cff"],
+    ["Utilities", "💡", "#3fb950"],
+    ["Health", "⚕️", "#ec6cb9"],
+    ["Shopping", "🛍️", "#56d4dd"],
+    ["Entertainment", "🎬", "#db61a2"],
+    ["Education", "📚", "#a371f7"],
+    ["Travel", "✈️", "#f0883e"],
+    ["Other", "📦", "#8b98a9"],
+  ];
+  const INCOME_CATS = [
+    ["Salary", "💼", "#3fb950"],
+    ["Freelance", "💻", "#4f9cf9"],
+    ["Investments", "📈", "#d29922"],
+    ["Gift", "🎁", "#db61a2"],
+    ["Other", "💰", "#8b98a9"],
+  ];
+  const catMeta = {};
+  [...EXPENSE_CATS, ...INCOME_CATS].forEach(([n, i, c]) => { catMeta[n] = { icon: i, color: c }; });
+
+  // ---- State / persistence ----
+  const STORE_KEY = "fintrack_v1";
+  let state = load();
+  let entryType = "expense";
+  let activeMonth = ymNow();
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return { transactions: seed(), budgets: {} };
+  }
+  function save() { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+
+  function seed() {
+    const d = new Date();
+    const ym = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+    const day = (n) => ym + "-" + String(n).padStart(2, "0");
+    return [
+      { id: uid(), type: "income", amount: 4200, cat: "Salary", desc: "Monthly salary", date: day(1) },
+      { id: uid(), type: "expense", amount: 1450, cat: "Housing", desc: "Rent", date: day(2) },
+      { id: uid(), type: "expense", amount: 320.5, cat: "Groceries", desc: "Weekly groceries", date: day(4) },
+      { id: uid(), type: "expense", amount: 68.2, cat: "Dining", desc: "Dinner with friends", date: day(6) },
+      { id: uid(), type: "expense", amount: 120, cat: "Utilities", desc: "Electricity + internet", date: day(8) },
+      { id: uid(), type: "expense", amount: 45, cat: "Transport", desc: "Gas", date: day(9) },
+      { id: uid(), type: "income", amount: 650, cat: "Freelance", desc: "Design project", date: day(11) },
+      { id: uid(), type: "expense", amount: 89.99, cat: "Shopping", desc: "New headphones", date: day(12) },
+      { id: uid(), type: "expense", amount: 32, cat: "Entertainment", desc: "Movie night", date: day(14) },
+    ];
+  }
+
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function ymNow() { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); }
+  function todayStr() { return new Date().toISOString().slice(0, 10); }
+  function money(n) {
+    const s = (Math.abs(n)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (n < 0 ? "-$" : "$") + s;
+  }
+
+  // ---- DOM refs ----
+  const $ = (id) => document.getElementById(id);
+  const txList = $("txList"), legend = $("legend"), donut = $("donut");
+
+  // ---- Populate category selects ----
+  function fillCatSelect(sel, cats, includeAll) {
+    sel.innerHTML = (includeAll ? '<option value="">All categories</option>' : "") +
+      cats.map(([n, i]) => `<option value="${n}">${i}  ${n}</option>`).join("");
+  }
+  function refreshFormCats() {
+    fillCatSelect($("fCat"), entryType === "expense" ? EXPENSE_CATS : INCOME_CATS, false);
+  }
+  fillCatSelect($("bCat"), EXPENSE_CATS, false);
+  fillCatSelect($("filterCat"), [...EXPENSE_CATS], true);
+
+  // ---- Render everything ----
+  function render() {
+    const txs = state.transactions
+      .filter((t) => t.date.startsWith(activeMonth))
+      .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+
+    let income = 0, expense = 0;
+    state.transactions.filter(t => t.date.startsWith(activeMonth)).forEach((t) => {
+      if (t.type === "income") income += t.amount; else expense += t.amount;
+    });
+    const net = income - expense;
+    const rate = income > 0 ? Math.max(0, (net / income) * 100) : 0;
+
+    $("cIncome").textContent = money(income);
+    $("cExpense").textContent = money(expense);
+    $("cNet").textContent = money(net);
+    $("cNet").className = "value mono " + (net >= 0 ? "pos" : "neg");
+    $("cRate").textContent = rate.toFixed(0) + "%";
+    const label = monthLabel(activeMonth);
+    $("cIncomeSub").textContent = label;
+    $("cExpenseSub").textContent = label;
+
+    renderTxList();
+    renderDonut(expense);
+    renderBudgets();
+    $("budgetMonth").textContent = label;
+  }
+
+  function monthLabel(ym) {
+    const [y, m] = ym.split("-").map(Number);
+    return new Date(y, m - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  }
+
+  function renderTxList() {
+    const q = $("search").value.trim().toLowerCase();
+    const fc = $("filterCat").value, ft = $("filterType").value;
+    let txs = state.transactions
+      .filter((t) => t.date.startsWith(activeMonth))
+      .filter((t) => !q || t.desc.toLowerCase().includes(q))
+      .filter((t) => !fc || t.cat === fc)
+      .filter((t) => !ft || t.type === ft)
+      .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+
+    $("txCount").textContent = txs.length + (txs.length === 1 ? " entry" : " entries");
+
+    if (!txs.length) {
+      txList.innerHTML = '<div class="empty">No transactions for this view.<br>Add one on the right →</div>';
+      return;
+    }
+    txList.innerHTML = txs.map((t) => {
+      const m = catMeta[t.cat] || { icon: "📦", color: "#8b98a9" };
+      const sign = t.type === "income" ? "+" : "−";
+      const cls = t.type === "income" ? "pos" : "neg";
+      const dt = new Date(t.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      return `<div class="tx" data-id="${t.id}">
+        <div class="ico" style="background:${m.color}22">${m.icon}</div>
+        <div class="meta">
+          <div class="desc">${escapeHtml(t.desc)}</div>
+          <div class="det">${t.cat} · ${dt}</div>
+        </div>
+        <div class="amt ${cls}">${sign}${money(t.amount).replace("$","$")}</div>
+        <button class="del" data-del="${t.id}" title="Delete">✕</button>
+      </div>`;
+    }).join("");
+  }
+
+  function renderDonut(totalExpense) {
+    const byCat = {};
+    state.transactions
+      .filter((t) => t.type === "expense" && t.date.startsWith(activeMonth))
+      .forEach((t) => { byCat[t.cat] = (byCat[t.cat] || 0) + t.amount; });
+    const entries = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+
+    if (!entries.length || totalExpense === 0) {
+      donut.innerHTML = '<circle cx="21" cy="21" r="15.915" fill="none" stroke="#232c38" stroke-width="6"/>';
+      legend.innerHTML = '<div style="color:var(--text-dim);font-size:13px;">No expenses yet this month.</div>';
+      return;
+    }
+    let offset = 0;
+    let segs = "";
+    entries.forEach(([cat, amt]) => {
+      const pct = (amt / totalExpense) * 100;
+      const color = (catMeta[cat] || {}).color || "#8b98a9";
+      segs += `<circle cx="21" cy="21" r="15.915" fill="none" stroke="${color}" stroke-width="6"
+        stroke-dasharray="${pct.toFixed(2)} ${(100 - pct).toFixed(2)}"
+        stroke-dashoffset="${(100 - offset + 25).toFixed(2)}"></circle>`;
+      offset += pct;
+    });
+    donut.innerHTML =
+      '<circle cx="21" cy="21" r="15.915" fill="none" stroke="#232c38" stroke-width="6"/>' + segs +
+      `<text x="21" y="20" text-anchor="middle" font-size="4" fill="#e6edf3" font-weight="700">${money(totalExpense).replace(".00","")}</text>` +
+      `<text x="21" y="25" text-anchor="middle" font-size="2.5" fill="#8b98a9">spent</text>`;
+
+    legend.innerHTML = entries.map(([cat, amt]) => {
+      const color = (catMeta[cat] || {}).color || "#8b98a9";
+      const pct = ((amt / totalExpense) * 100).toFixed(0);
+      return `<div class="li"><span class="dot" style="background:${color}"></span>
+        <span class="lcat">${cat}</span>
+        <span class="lamt">${money(amt)} · ${pct}%</span></div>`;
+    }).join("");
+  }
+
+  function renderBudgets() {
+    const list = $("budgetList");
+    const budgets = state.budgets || {};
+    const keys = Object.keys(budgets);
+    if (!keys.length) {
+      list.innerHTML = '<div class="empty">No budgets set.<br>Add one on the right →</div>';
+      return;
+    }
+    const spent = {};
+    state.transactions
+      .filter((t) => t.type === "expense" && t.date.startsWith(activeMonth))
+      .forEach((t) => { spent[t.cat] = (spent[t.cat] || 0) + t.amount; });
+
+    list.innerHTML = keys.map((cat) => {
+      const limit = budgets[cat];
+      const used = spent[cat] || 0;
+      const pct = Math.min(100, (used / limit) * 100);
+      const over = used > limit;
+      const m = catMeta[cat] || { icon: "📦", color: "#8b98a9" };
+      let color = m.color;
+      if (pct >= 100) color = "var(--red)";
+      else if (pct >= 80) color = "var(--amber)";
+      return `<div class="budget">
+        <div class="bhead">
+          <span class="cat">${m.icon} ${cat}</span>
+          <span class="${over ? 'neg' : ''}">${money(used)} / ${money(limit)}
+            <button class="del" data-delbudget="${cat}" style="opacity:.6;border:none;background:none;color:var(--text-dim);padding:2px 4px;cursor:pointer;">✕</button>
+          </span>
+        </div>
+        <div class="bar"><span style="width:${pct}%;background:${color}"></span></div>
+        ${over ? `<div style="font-size:12px;color:var(--red);margin-top:4px;">Over budget by ${money(used - limit)}</div>` : ''}
+      </div>`;
+    }).join("");
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  // ---- Toast ----
+  let toastTimer;
+  function toast(msg) {
+    const t = $("toast");
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+  }
+
+  // ---- Events ----
+  $("segExpense").addEventListener("click", () => setType("expense"));
+  $("segIncome").addEventListener("click", () => setType("income"));
+  function setType(t) {
+    entryType = t;
+    $("segExpense").classList.toggle("active", t === "expense");
+    $("segIncome").classList.toggle("active", t === "income");
+    refreshFormCats();
+  }
+
+  $("addBtn").addEventListener("click", () => {
+    const amount = parseFloat($("fAmount").value);
+    const desc = $("fDesc").value.trim();
+    const date = $("fDate").value || todayStr();
+    const cat = $("fCat").value;
+    if (!amount || amount <= 0) return toast("Enter a valid amount");
+    if (!desc) return toast("Enter a description");
+    state.transactions.push({ id: uid(), type: entryType, amount, cat, desc, date });
+    save();
+    // jump to the month of the new transaction so it's visible
+    activeMonth = date.slice(0, 7);
+    $("monthPicker").value = activeMonth;
+    $("fAmount").value = ""; $("fDesc").value = "";
+    render();
+    toast((entryType === "income" ? "Income" : "Expense") + " added");
+  });
+
+  txList.addEventListener("click", (e) => {
+    const id = e.target.getAttribute("data-del");
+    if (!id) return;
+    state.transactions = state.transactions.filter((t) => t.id !== id);
+    save(); render(); toast("Transaction deleted");
+  });
+
+  $("budgetList").addEventListener("click", (e) => {
+    const cat = e.target.getAttribute("data-delbudget");
+    if (!cat) return;
+    delete state.budgets[cat];
+    save(); render(); toast("Budget removed");
+  });
+
+  $("setBudgetBtn").addEventListener("click", () => {
+    const cat = $("bCat").value;
+    const amt = parseFloat($("bAmount").value);
+    if (!amt || amt <= 0) return toast("Enter a valid limit");
+    state.budgets[cat] = amt;
+    save(); render(); $("bAmount").value = "";
+    toast("Budget saved for " + cat);
+  });
+
+  ["search", "filterCat", "filterType"].forEach((id) =>
+    $(id).addEventListener("input", renderTxList));
+
+  $("monthPicker").addEventListener("change", (e) => {
+    activeMonth = e.target.value || ymNow();
+    render();
+  });
+
+  // Tabs
+  document.querySelectorAll(".tabs button").forEach((b) => {
+    b.addEventListener("click", () => {
+      document.querySelectorAll(".tabs button").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      const tab = b.getAttribute("data-tab");
+      $("tab-overview").hidden = tab !== "overview";
+      $("tab-budgets").hidden = tab !== "budgets";
+    });
+  });
+
+  // Export / Import
+  $("exportBtn").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "fintrack-backup-" + todayStr() + ".json";
+    a.click();
+    toast("Data exported");
+  });
+  $("importBtn").addEventListener("click", () => $("importFile").click());
+  $("importFile").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!data.transactions) throw new Error("bad file");
+        state = { transactions: data.transactions, budgets: data.budgets || {} };
+        save(); render();
+        toast("Data imported (" + state.transactions.length + " transactions)");
+      } catch (err) { toast("Invalid backup file"); }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  });
+
+  // ---- Init ----
+  $("fDate").value = todayStr();
+  $("monthPicker").value = activeMonth;
+  refreshFormCats();
+  render();
+})();
+</script>
+</body>
+</html>

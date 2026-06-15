@@ -1,0 +1,15 @@
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor folders
+.vscode/
+.idea/
+
+# Vercel
+.vercel
+
+# Logs / deps (not used by this static app, but harmless to ignore)
+node_modules/
+*.log

@@ -1,0 +1,32 @@
+Date,Type,Category,Description,Amount,,DASHBOARD (set period below),,,BUDGET,,,,
+2026-06-01,Income,Salary,Monthly salary,4200,,Period Start,2026-06-01,,Category,Monthly Budget,Spent,Remaining,% Used
+2026-06-02,Expense,Housing,Rent,1450,,Period End,2026-06-30,,Groceries,500,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$J3,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",=K3-L3,"=IF(K3=0,0,L3/K3)"
+2026-06-03,Expense,Utilities,Electric + internet,120,,Total Income,"=SUMIFS($E:$E,$B:$B,""Income"",$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",,Dining,250,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$J4,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",=K4-L4,"=IF(K4=0,0,L4/K4)"
+2026-06-04,Expense,Groceries,Weekly groceries,95.40,,Total Expenses,"=SUMIFS($E:$E,$B:$B,""Expense"",$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",,Transport,200,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$J5,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",=K5-L5,"=IF(K5=0,0,L5/K5)"
+2026-06-06,Expense,Dining,Dinner out,52.75,,Net Savings,=H4-H5,,Housing,1500,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$J6,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",=K6-L6,"=IF(K6=0,0,L6/K6)"
+2026-06-08,Expense,Transport,Gas + transit,60,,Savings Rate,"=IF(H4=0,0,H6/H4)",,Utilities,200,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$J7,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",=K7-L7,"=IF(K7=0,0,L7/K7)"
+2026-06-10,Income,Freelance,Side project,650,,,,,Health,150,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$J8,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",=K8-L8,"=IF(K8=0,0,L8/K8)"
+2026-06-12,Expense,Groceries,Groceries,88.20,,Expenses by Category,,,Shopping,200,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$J9,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",=K9-L9,"=IF(K9=0,0,L9/K9)"
+2026-06-14,Expense,Entertainment,Streaming + movie,36.99,,Groceries,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$G10,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",,Entertainment,100,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$J10,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",=K10-L10,"=IF(K10=0,0,L10/K10)"
+2026-06-16,Expense,Health,Pharmacy,24.50,,Dining,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$G11,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",,Education,100,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$J11,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",=K11-L11,"=IF(K11=0,0,L11/K11)"
+2026-06-18,Expense,Shopping,Clothes,75.00,,Transport,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$G12,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",,Travel,200,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$J12,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",=K12-L12,"=IF(K12=0,0,L12/K12)"
+2026-06-20,Expense,Dining,Lunches,41.30,,Housing,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$G13,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",,Other,150,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$J13,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",=K13-L13,"=IF(K13=0,0,L13/K13)"
+,,,,,,Utilities,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$G14,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)",,TOTAL,=SUM(K3:K13),=SUM(L3:L13),=K14-L14,"=IF(K14=0,0,L14/K14)"
+,,,,,,Health,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$G15,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)"
+,,,,,,Shopping,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$G16,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)"
+,,,,,,Entertainment,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$G17,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)"
+,,,,,,Education,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$G18,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)"
+,,,,,,Travel,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$G19,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)"
+,,,,,,Other,"=SUMIFS($E:$E,$B:$B,""Expense"",$C:$C,$G20,$A:$A,"">=""&$H$2,$A:$A,""<=""&$H$3)"
+,,,,
+,,,,
+,,,,
+,,,,
+,,,,
+,,,,
+,,,,
+,,,,
+,,,,
+,,,,
+,,,,
+,,,,
