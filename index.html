@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FinTrack — Personal Finance Tracker</title>
+<link rel="icon" type="image/svg+xml" href="logo-icon.svg">
 <style>
   :root {
     --bg: #0f1419;
@@ -136,6 +137,7 @@
   }
   .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
   .mono { font-variant-numeric: tabular-nums; }
+  .user-chip { font-size: 12px; color: var(--text-dim); padding: 0 4px; align-self: center; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .cards { grid-template-columns: repeat(2,1fr); } }
   @media (max-width: 520px) { .cards { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } }
   ::-webkit-scrollbar { width: 8px; }
@@ -146,7 +148,15 @@
 <div class="app">
   <header class="top">
     <div class="brand">
-      <div class="logo">₣</div>
+      <div class="logo">
+        <svg width="24" height="24" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <rect x="13" y="40" width="9" height="11" rx="3.5" fill="#fff" opacity="0.5"/>
+          <rect x="27.5" y="33" width="9" height="18" rx="3.5" fill="#fff" opacity="0.75"/>
+          <rect x="42" y="24" width="9" height="27" rx="3.5" fill="#fff"/>
+          <path d="M14 28 L30 20 L40 23 L52 12" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M52 12 L43.5 12.5 M52 12 L51.5 20.5" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
       <div>
         <h1>FinTrack</h1>
         <p>Personal finance, all in one place</p>
@@ -157,6 +167,8 @@
       <button class="ghost" id="exportBtn" title="Download all data as JSON">⤓ Export</button>
       <button class="ghost" id="importBtn" title="Import a JSON backup">⤒ Import</button>
       <input type="file" id="importFile" accept="application/json" hidden>
+      <span class="user-chip" id="userEmail" title="Signed in"></span>
+      <button class="ghost" id="signoutBtn" title="Sign out">Sign out</button>
     </div>
   </header>
 
@@ -244,6 +256,8 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
 <script>
 (function () {
   "use strict";
@@ -272,39 +286,29 @@
   const catMeta = {};
   [...EXPENSE_CATS, ...INCOME_CATS].forEach(([n, i, c]) => { catMeta[n] = { icon: i, color: c }; });
 
-  // ---- State / persistence ----
-  const STORE_KEY = "fintrack_v1";
-  let state = load();
+  // ---- Supabase client / state ----
+  function configured() {
+    return window.SUPABASE_URL && window.SUPABASE_ANON_KEY &&
+      !/YOUR-PROJECT|YOUR-PUBLIC/.test(window.SUPABASE_URL + window.SUPABASE_ANON_KEY);
+  }
+  const sb = configured() ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY) : null;
+  let userId = null;
+  let state = { transactions: [], budgets: {} };
   let entryType = "expense";
   let activeMonth = ymNow();
 
-  function load() {
-    try {
-      const raw = localStorage.getItem(STORE_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch (e) {}
-    return { transactions: seed(), budgets: {} };
+  async function loadData() {
+    const { data: txs, error: e1 } = await sb.from("transactions").select("*");
+    if (e1) { toast("Load error: " + e1.message); return; }
+    state.transactions = (txs || []).map((r) => ({
+      id: r.id, type: r.type, amount: Number(r.amount),
+      cat: r.category, desc: r.description || "", date: r.date,
+    }));
+    const { data: buds, error: e2 } = await sb.from("budgets").select("*");
+    if (e2) { toast("Load error: " + e2.message); return; }
+    state.budgets = {};
+    (buds || []).forEach((b) => { state.budgets[b.category] = Number(b.amount); });
   }
-  function save() { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
-
-  function seed() {
-    const d = new Date();
-    const ym = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
-    const day = (n) => ym + "-" + String(n).padStart(2, "0");
-    return [
-      { id: uid(), type: "income", amount: 4200, cat: "Salary", desc: "Monthly salary", date: day(1) },
-      { id: uid(), type: "expense", amount: 1450, cat: "Housing", desc: "Rent", date: day(2) },
-      { id: uid(), type: "expense", amount: 320.5, cat: "Groceries", desc: "Weekly groceries", date: day(4) },
-      { id: uid(), type: "expense", amount: 68.2, cat: "Dining", desc: "Dinner with friends", date: day(6) },
-      { id: uid(), type: "expense", amount: 120, cat: "Utilities", desc: "Electricity + internet", date: day(8) },
-      { id: uid(), type: "expense", amount: 45, cat: "Transport", desc: "Gas", date: day(9) },
-      { id: uid(), type: "income", amount: 650, cat: "Freelance", desc: "Design project", date: day(11) },
-      { id: uid(), type: "expense", amount: 89.99, cat: "Shopping", desc: "New headphones", date: day(12) },
-      { id: uid(), type: "expense", amount: 32, cat: "Entertainment", desc: "Movie night", date: day(14) },
-    ];
-  }
-
-  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function ymNow() { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); }
   function todayStr() { return new Date().toISOString().slice(0, 10); }
   function money(n) {
@@ -487,15 +491,20 @@
     refreshFormCats();
   }
 
-  $("addBtn").addEventListener("click", () => {
+  $("addBtn").addEventListener("click", async () => {
     const amount = parseFloat($("fAmount").value);
     const desc = $("fDesc").value.trim();
     const date = $("fDate").value || todayStr();
     const cat = $("fCat").value;
     if (!amount || amount <= 0) return toast("Enter a valid amount");
     if (!desc) return toast("Enter a description");
-    state.transactions.push({ id: uid(), type: entryType, amount, cat, desc, date });
-    save();
+    const btn = $("addBtn"); btn.disabled = true;
+    const { data, error } = await sb.from("transactions")
+      .insert({ user_id: userId, type: entryType, amount, category: cat, description: desc, date })
+      .select().single();
+    btn.disabled = false;
+    if (error) return toast("Error: " + error.message);
+    state.transactions.push({ id: data.id, type: entryType, amount: Number(data.amount), cat, desc, date });
     // jump to the month of the new transaction so it's visible
     activeMonth = date.slice(0, 7);
     $("monthPicker").value = activeMonth;
@@ -504,26 +513,33 @@
     toast((entryType === "income" ? "Income" : "Expense") + " added");
   });
 
-  txList.addEventListener("click", (e) => {
+  txList.addEventListener("click", async (e) => {
     const id = e.target.getAttribute("data-del");
     if (!id) return;
+    const { error } = await sb.from("transactions").delete().eq("id", id);
+    if (error) return toast("Error: " + error.message);
     state.transactions = state.transactions.filter((t) => t.id !== id);
-    save(); render(); toast("Transaction deleted");
+    render(); toast("Transaction deleted");
   });
 
-  $("budgetList").addEventListener("click", (e) => {
+  $("budgetList").addEventListener("click", async (e) => {
     const cat = e.target.getAttribute("data-delbudget");
     if (!cat) return;
+    const { error } = await sb.from("budgets").delete().eq("category", cat);
+    if (error) return toast("Error: " + error.message);
     delete state.budgets[cat];
-    save(); render(); toast("Budget removed");
+    render(); toast("Budget removed");
   });
 
-  $("setBudgetBtn").addEventListener("click", () => {
+  $("setBudgetBtn").addEventListener("click", async () => {
     const cat = $("bCat").value;
     const amt = parseFloat($("bAmount").value);
     if (!amt || amt <= 0) return toast("Enter a valid limit");
+    const { error } = await sb.from("budgets")
+      .upsert({ user_id: userId, category: cat, amount: amt }, { onConflict: "user_id,category" });
+    if (error) return toast("Error: " + error.message);
     state.budgets[cat] = amt;
-    save(); render(); $("bAmount").value = "";
+    render(); $("bAmount").value = "";
     toast("Budget saved for " + cat);
   });
 
@@ -560,24 +576,56 @@
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const data = JSON.parse(reader.result);
-        if (!data.transactions) throw new Error("bad file");
-        state = { transactions: data.transactions, budgets: data.budgets || {} };
-        save(); render();
-        toast("Data imported (" + state.transactions.length + " transactions)");
-      } catch (err) { toast("Invalid backup file"); }
+        if (!Array.isArray(data.transactions)) throw new Error("bad file");
+        const rows = data.transactions.map((t) => ({
+          user_id: userId,
+          type: t.type === "income" ? "income" : "expense",
+          amount: Number(t.amount) || 0,
+          category: t.cat || t.category || "Other",
+          description: t.desc || t.description || "",
+          date: t.date || todayStr(),
+        }));
+        if (rows.length) {
+          const { error } = await sb.from("transactions").insert(rows);
+          if (error) throw error;
+        }
+        const buds = data.budgets || {};
+        const budRows = Object.keys(buds).map((c) => ({ user_id: userId, category: c, amount: Number(buds[c]) || 0 }));
+        if (budRows.length) {
+          const { error } = await sb.from("budgets").upsert(budRows, { onConflict: "user_id,category" });
+          if (error) throw error;
+        }
+        await loadData();
+        render();
+        toast("Imported " + rows.length + " transactions");
+      } catch (err) { toast("Import failed: " + (err.message || "invalid file")); }
     };
     reader.readAsText(file);
     e.target.value = "";
   });
 
+  // ---- Sign out ----
+  $("signoutBtn").addEventListener("click", async () => {
+    if (sb) await sb.auth.signOut();
+    location.href = "signin.html";
+  });
+
   // ---- Init ----
-  $("fDate").value = todayStr();
-  $("monthPicker").value = activeMonth;
-  refreshFormCats();
-  render();
+  (async function init() {
+    if (!configured()) { location.href = "signin.html"; return; }
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { location.href = "signin.html"; return; }
+    userId = session.user.id;
+    $("userEmail").textContent = session.user.email;
+    $("fDate").value = todayStr();
+    $("monthPicker").value = activeMonth;
+    refreshFormCats();
+    await loadData();
+    render();
+  })();
 })();
 </script>
 </body>

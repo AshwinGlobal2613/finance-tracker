@@ -1,0 +1,17 @@
+<svg width="250" height="64" viewBox="0 0 250 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="FinTrack">
+  <defs>
+    <linearGradient id="ftg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4f9cf9"/>
+      <stop offset="1" stop-color="#7c5cff"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#ftg)"/>
+  <rect x="13" y="40" width="9" height="11" rx="3.5" fill="#ffffff" opacity="0.5"/>
+  <rect x="27.5" y="33" width="9" height="18" rx="3.5" fill="#ffffff" opacity="0.75"/>
+  <rect x="42" y="24" width="9" height="27" rx="3.5" fill="#ffffff"/>
+  <path d="M14 28 L30 20 L40 23 L52 12" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M52 12 L43.5 12.5 M52 12 L51.5 20.5" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="82" y="41" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="32" font-weight="600" letter-spacing="-0.5">
+    <tspan fill="#232c38">Fin</tspan><tspan fill="#4f9cf9">Track</tspan>
+  </text>
+</svg>

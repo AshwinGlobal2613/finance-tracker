@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in — FinTrack</title>
+<link rel="icon" type="image/svg+xml" href="logo-icon.svg">
+<style>
+  :root {
+    --bg: #0f1419; --surface: #1a212b; --surface-2: #232c38; --border: #2e3a48;
+    --text: #e6edf3; --text-dim: #8b98a9; --accent: #4f9cf9; --accent-soft: rgba(79,156,249,.15);
+    --green: #3fb950; --red: #f85149;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+    display: grid; place-items: center; padding: 24px; -webkit-font-smoothing: antialiased;
+  }
+  .card {
+    width: 100%; max-width: 400px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 16px; padding: 32px 28px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.35);
+  }
+  .brand { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 24px; }
+  .logo {
+    width: 56px; height: 56px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), #7c5cff);
+    display: grid; place-items: center;
+  }
+  .brand h1 { font-size: 22px; font-weight: 600; letter-spacing: -.4px; }
+  .brand p { font-size: 13px; color: var(--text-dim); }
+  .tabs { display: flex; gap: 4px; background: var(--surface-2); padding: 4px; border-radius: 10px; margin-bottom: 20px; }
+  .tabs button {
+    flex: 1; font: inherit; cursor: pointer; border: none; background: transparent;
+    color: var(--text-dim); padding: 9px; border-radius: 7px; transition: .15s;
+  }
+  .tabs button.active { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+  label.field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-dim); margin-bottom: 14px; }
+  input {
+    font: inherit; background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--text); padding: 11px 13px; border-radius: 9px; width: 100%;
+  }
+  input:focus { outline: none; border-color: var(--accent); }
+  button.primary {
+    width: 100%; font: inherit; font-weight: 500; cursor: pointer; color: #fff;
+    background: var(--accent); border: none; padding: 12px; border-radius: 9px; transition: .15s; margin-top: 4px;
+  }
+  button.primary:hover { background: #3b8aee; }
+  button.primary:disabled { opacity: .6; cursor: default; }
+  .msg { font-size: 13px; margin-top: 16px; padding: 11px 13px; border-radius: 9px; display: none; line-height: 1.45; }
+  .msg.show { display: block; }
+  .msg.error { background: rgba(248,81,73,.12); border: 1px solid rgba(248,81,73,.4); color: #ffb4ae; }
+  .msg.ok { background: rgba(63,185,80,.12); border: 1px solid rgba(63,185,80,.4); color: #8ce39a; }
+  .foot { text-align: center; font-size: 12px; color: var(--text-dim); margin-top: 20px; line-height: 1.5; }
+  a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <div class="logo">
+        <svg width="32" height="32" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <rect x="13" y="40" width="9" height="11" rx="3.5" fill="#fff" opacity="0.5"/>
+          <rect x="27.5" y="33" width="9" height="18" rx="3.5" fill="#fff" opacity="0.75"/>
+          <rect x="42" y="24" width="9" height="27" rx="3.5" fill="#fff"/>
+          <path d="M14 28 L30 20 L40 23 L52 12" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M52 12 L43.5 12.5 M52 12 L51.5 20.5" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div style="text-align:center;">
+        <h1>FinTrack</h1>
+        <p id="subtitle">Sign in to your account</p>
+      </div>
+    </div>
+
+    <div id="authBox">
+      <div class="tabs">
+        <button id="tabSignin" class="active">Sign in</button>
+        <button id="tabSignup">Create account</button>
+      </div>
+
+      <form id="authForm" autocomplete="on">
+        <label class="field">Email
+          <input type="email" id="email" required placeholder="you@example.com" autocomplete="email">
+        </label>
+        <label class="field">Password
+          <input type="password" id="password" required minlength="6" placeholder="••••••••" autocomplete="current-password">
+        </label>
+        <button type="submit" class="primary" id="submitBtn">Sign in</button>
+      </form>
+
+      <div class="msg" id="msg"></div>
+      <div class="foot">Your data is private and protected by row-level security.</div>
+    </div>
+
+    <div id="setupBox" style="display:none;">
+      <div class="msg error show" style="margin-top:0;">
+        <strong>Supabase isn't configured yet.</strong><br>
+        Open <code>config.js</code> and paste your Project URL and anon key
+        (Supabase → Project Settings → API), then redeploy. See
+        <code>SUPABASE-SETUP.md</code> for the full walkthrough.
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const $ = (id) => document.getElementById(id);
+
+    function configured() {
+      return window.SUPABASE_URL && window.SUPABASE_ANON_KEY &&
+        !/YOUR-PROJECT|YOUR-PUBLIC/.test(window.SUPABASE_URL + window.SUPABASE_ANON_KEY);
+    }
+    if (!configured()) {
+      $("authBox").style.display = "none";
+      $("setupBox").style.display = "block";
+      $("subtitle").textContent = "Setup required";
+      return;
+    }
+
+    const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    let mode = "signin";
+
+    // If already signed in, go straight to the app.
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (session) location.href = "index.html";
+    });
+
+    function setMode(m) {
+      mode = m;
+      const signin = m === "signin";
+      $("tabSignin").classList.toggle("active", signin);
+      $("tabSignup").classList.toggle("active", !signin);
+      $("submitBtn").textContent = signin ? "Sign in" : "Create account";
+      $("subtitle").textContent = signin ? "Sign in to your account" : "Create a new account";
+      $("password").setAttribute("autocomplete", signin ? "current-password" : "new-password");
+      hideMsg();
+    }
+    $("tabSignin").addEventListener("click", () => setMode("signin"));
+    $("tabSignup").addEventListener("click", () => setMode("signup"));
+
+    function showMsg(text, kind) {
+      const m = $("msg");
+      m.textContent = text;
+      m.className = "msg show " + kind;
+    }
+    function hideMsg() { $("msg").className = "msg"; }
+
+    $("authForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = $("email").value.trim();
+      const password = $("password").value;
+      if (!email || password.length < 6) {
+        return showMsg("Enter a valid email and a password of at least 6 characters.", "error");
+      }
+      const btn = $("submitBtn");
+      btn.disabled = true;
+      btn.textContent = mode === "signin" ? "Signing in…" : "Creating account…";
+      hideMsg();
+
+      try {
+        if (mode === "signin") {
+          const { error } = await sb.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          location.href = "index.html";
+        } else {
+          const { data, error } = await sb.auth.signUp({ email, password });
+          if (error) throw error;
+          if (data.session) {
+            location.href = "index.html";
+          } else {
+            showMsg("Account created. Check your email to confirm, then sign in.", "ok");
+            setMode("signin");
+          }
+        }
+      } catch (err) {
+        showMsg(err.message || "Something went wrong. Please try again.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = mode === "signin" ? "Sign in" : "Create account";
+      }
+    });
+  })();
+  </script>
+</body>
+</html>
